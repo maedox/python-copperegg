@@ -1,7 +1,9 @@
 # A Python wrapper for the CopperEgg API.
 
 **Here be dragons:**
+
 *This software has the ability to modify all your data through the CopperEgg API.
+
 Make sure you have read and understood the code before using it for any purpose.*
 
 ## Features
@@ -9,6 +11,7 @@ Make sure you have read and understood the code before using it for any purpose.
 - Listing and updating probes.
 
 Listing and editing probes by tag is coming soon.
+
 Let me know if there are features you would like to see.
 
 ## Requirements
@@ -19,10 +22,13 @@ Let me know if there are features you would like to see.
 ## Installation
 
     sudo python setup.py install
-    OR
+
+OR
+
 	sudo python3 setup.py install
 
 Append this to ~/.netrc to enable automatic authentication with your API token:
+
 	machine api.copperegg.com login [your token] password U
 
 ## Usage
@@ -47,7 +53,9 @@ Set the check interval to 15 seconds for probe_id:
 *I am in no way affiliated with CopperEgg.*
 
 This software is provided as is.
+
 It should be safe, but don't blame me if something breaks.
+
 It is written and tested for use on GNU/Linux with Python 2.7+, 3.3+.
 
 ## CopperEgg API documentation
