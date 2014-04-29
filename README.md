@@ -2,15 +2,16 @@
 
 **Here be dragons:**
 
-*This software has the ability to modify all your data through the CopperEgg API.
+This software has the ability to modify all your data through the CopperEgg API.
 
-Make sure you have read and understood the code before using it for any purpose.*
+Make sure you have read and understood the code before using it for any purpose.
 
 ## Features
 
 - Listing and updating probes.
 
-Listing and editing probes by tag is coming soon.
+### Coming soon
+- Listing and editing probes by tag
 
 Let me know if there are features you would like to see.
 
@@ -52,11 +53,9 @@ Set the check interval to 15 seconds for probe_id:
 ## Disclaimer
 *I am in no way affiliated with CopperEgg.*
 
-This software is provided as is.
-
-It should be safe, but don't blame me if something breaks.
-
-It is written and tested for use on GNU/Linux with Python 2.7+, 3.3+.
+- This software is provided as is.
+- It should be safe, but don't blame me if something breaks.
+- It is written and tested for use on GNU/Linux with Python 2.7+, 3.3+.
 
 ## CopperEgg API documentation
 http://dev.copperegg.com/
