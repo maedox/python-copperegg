@@ -11,9 +11,11 @@ Make sure you have read and understood the code before using it for any purpose.
 - Listing and updating probes.
 
 ### Coming soon
-- Listing and editing probes by tag
+- Enabling stations by region
+- Adding new probes
+- Deleting probes
 
-Let me know if there are features you would like to see.
+Let me know if there are features you would like to see in the future.
 
 ## Requirements
 - A CopperEgg account and API token.
