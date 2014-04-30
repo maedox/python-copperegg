@@ -7,7 +7,8 @@ setup(
     author='maedox',
     author_email='paal.nilsen@gmail.com',
     url='http://github.com/maedox/python-copperegg',
-    packages=['copperegg']
+    packages=['copperegg'],
+    scripts=['copperegg-cli']
 )
 
 package_dir = {'copperegg': 'lib'}
