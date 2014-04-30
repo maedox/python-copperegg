@@ -81,7 +81,6 @@ class CopperEggCli(object):
 
     def __init__(self):
         self.api = copperegg.CopperEgg()
-        self.pool = Pool(20)
 
     def get_stations_from_region(self, region):
         output = []
@@ -231,9 +230,10 @@ class CopperEggCli(object):
         if probes_to_process:
             log.debug("Probes to change: %s", probes_to_process)
 
-            processing_results = self.pool.map(
-                self.process_probe, probes_to_process
-            )
+            pool = Pool(20)
+            processing_results = pool.map(self.process_probe, probes_to_process)
+            pool.close()
+            pool.join()
             log.debug(json.dumps(processing_results, indent=2))
 
         else:
