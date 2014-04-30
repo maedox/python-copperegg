@@ -7,6 +7,8 @@ __author__ = "Pål Nilsen (@maedox)"
 __version__ = "0.1"
 
 
+import json
+
 try:
     import requests
 except ImportError:
@@ -41,7 +43,8 @@ class CopperEgg(object):
         if method is "get":
             req = requests.request(method, url)
         else:
-            req = requests.request(method, url, data=data)
+            headers = {'content-type': 'application/json'}
+            req = requests.request(method, url, data=json.dumps(data), headers=headers)
 
         if req.status_code == 200:
             return req.json() or None
