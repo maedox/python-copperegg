@@ -19,27 +19,44 @@ except ImportError:
     print("""python-copperegg is required for this script to work.\n"""
           """See https://github.com/maedox/python-copperegg""")
 
-valid_log_levels = ("CRITICAL", "ERROR", "WARNING",
-                    "INFO", "DEBUG", "NOTSET")
 valid_frequencies = (15, 60, 300)
 
-# TODO: Allow using regions, e.g. EU, APAC.
-ce_stations = {"atl": "Atlanta, GA (linode)",
-               "dal": "Dallas, TX (linode)",
-               "nrk": "Newark, NJ (linode)",
-               "nva": "N. Virginia (aws)",
-               "fre": "Fremont, CA (linode)",
-               "nca": "N. California (aws)",
-               "ore": "Oregon (aws)",
-               "amd": "Amsterdam, NL (softlayer)",
-               "ire": "Dublin, IE (aws)",
-               "lon": "London, UK (linode)",
-               "sin": "Singapore (aws)",
-               "syd": "Sydney, AU (aws)",
-               "tky": "Tokyo, JP (aws)",
-               "tok": "Tokyo, JP (linode)",
-               "sap": "São Paulo, BR (aws)"}
-valid_stations = list(ce_stations.keys())
+regions = {
+    "us-east": {
+        "atl": "Atlanta, GA (linode)",
+        "dal": "Dallas, TX (linode)",
+        "nrk": "Newark, NJ (linode)",
+        "nva": "N. Virginia (aws)",
+    },
+    "us-west": {
+        "fre": "Fremont, CA (linode)",
+        "nca": "N. California (aws)",
+        "ore": "Oregon (aws)",
+    },
+    "eu": {
+        "amd": "Amsterdam, NL (softlayer)",
+        "ire": "Dublin, IE (aws)",
+        "lon": "London, UK (linode)"
+    },
+    "apac": {
+        "sin": "Singapore (aws)",
+        "syd": "Sydney, AU (aws)",
+        "tky": "Tokyo, JP (aws)",
+        "tok": "Tokyo, JP (linode)",
+    },
+    "s-am": {
+        "sap": "Sao Paulo, BR (aws)",
+    }
+}
+valid_regions = []
+valid_stations = []
+for k, v in regions.items():
+    valid_regions.append(k)
+
+    for s in v.keys():
+        valid_stations.append(s)
+
+ce_stations = list(valid_stations)
 valid_stations.append("all")
 
 log_path = path.join(path.expanduser("~"), ".copperegg-cli.log")
@@ -52,8 +69,37 @@ log_stdout = logging.StreamHandler(stdout)
 log_stdout.setFormatter(log_format)
 
 log = logging.getLogger(log_path)
+
+valid_log_levels = ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET")
 log.setLevel("INFO")
 log.addHandler(log_handler)
+
+
+def get_stations_from_region(region):
+    output = []
+    if region in valid_regions:
+        for station in regions[region]:
+            output.append(station)
+
+    return output
+
+
+def get_stations(stations):
+    stations = list(stations)
+    region_stations = []
+    output = []
+
+    for station in stations:
+        if station in valid_stations:
+            output.append(station)
+
+        elif station in valid_regions:
+            region_stations = get_stations_from_region(station)
+
+        if region_stations:
+            output.extend(region_stations)
+
+    return list(set().union(output, region_stations))
 
 
 if __name__ == "__main__":
@@ -71,7 +117,8 @@ if __name__ == "__main__":
                         choices=valid_frequencies, metavar="frequency",
                         help="Seconds between tests.")
     parser.add_argument("--set-stations", nargs="+",
-                        default=[], metavar="station", choices=valid_stations,
+                        default=[], metavar="station",
+                        choices=valid_stations + valid_regions,
                         help="Stations to enable.")
     parser.add_argument("--help-stations", action="store_true",
                         help="Show list of valid station identifiers.")
@@ -102,9 +149,8 @@ if __name__ == "__main__":
     noop = args.noop
 
     if help_stations:
-        print("Valid stations [id: location (provider)]:\n")
-        for k, v in ce_stations.iteritems():
-            print(" {0}: {1}".format(k, v))
+        print("Valid stations [region, id, location (provider)]:\n")
+        print(json.dumps(regions, indent=2))
         print("\nYou may additionally use 'all' to enable all stations.")
         exit(0)
 
@@ -146,14 +192,14 @@ if __name__ == "__main__":
 
             if arg_set_stations:
                 if "all" in arg_set_stations:
-                    data["stations"] = ce_stations.keys()
+                    data["stations"] = ce_stations
 
                 elif replace_stations:
-                    data["stations"] = arg_set_stations
+                    data["stations"] = get_stations(arg_set_stations)
 
                 else:
                     data["stations"] = probe["stations"]
-                    for station in arg_set_stations:
+                    for station in get_stations(arg_set_stations):
                         if station not in data["stations"]:
                             data["stations"].append(station)
 

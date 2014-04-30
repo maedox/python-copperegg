@@ -10,8 +10,10 @@ Make sure you have read and understood the code before using it for any purpose.
 
 - Listing and updating probes.
 
-### Coming soon
+### Recently added
 - Enabling stations by region
+
+### Coming soon
 - Adding new probes
 - Deleting probes
 
@@ -119,7 +121,13 @@ Disable all probes tagged "dev":
 
 	copperegg-cli --get-tags dev --set-stations lon amd nrk --replace-stations
 
-*Coming soon: The ability to use regions names.*
+*New:* You can now use region names too. Here's how to enable EU, APAC and Newark:
+
+	copperegg-cli --get-tags dev --set-stations eu apac nrk
+
+If you want to enable stations in EU only:
+
+	copperegg-cli --get-tags dev --set-stations eu --replace-stations
 
 ## Disclaimer
 *I am in no way affiliated with CopperEgg.*
