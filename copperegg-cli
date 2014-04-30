@@ -39,7 +39,7 @@ ce_stations = {"atl": "Atlanta, GA (linode)",
                "tky": "Tokyo, JP (aws)",
                "tok": "Tokyo, JP (linode)",
                "sap": "São Paulo, BR (aws)"}
-valid_stations = ce_stations.keys()
+valid_stations = list(ce_stations.keys())
 valid_stations.append("all")
 
 log_path = path.join(path.expanduser("~"), ".copperegg-cli.log")
@@ -132,7 +132,7 @@ if __name__ == "__main__":
         probe_tags = probe["tags"]
         probe_stations = probe["stations"]
 
-        if arg_get_probes == "all" or arg_get_tags == "all" or \
+        if "all" in arg_get_probes or "all" in arg_get_tags or \
                 probe_id in arg_get_probes or \
                 any(tag in arg_get_tags for tag in probe_tags):
 
@@ -178,6 +178,9 @@ if __name__ == "__main__":
                     log.info("""Updating "%s" (id: %s), setting data: %s""",
                              probe["probe_desc"], probe["id"], data)
                     api.update_probe(probe["id"], data)
+                else:
+                    log.info("""Matched probe "%s" (id: %s)""",
+                             probe["probe_desc"], probe["id"])
 
     else:
         print("No matching probes found.")
