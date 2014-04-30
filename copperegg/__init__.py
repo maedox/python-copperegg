@@ -39,12 +39,14 @@ class CopperEgg(object):
                 """Must be one of: get, post, put""".format(method))
 
         url = "{0}{1}".format(self.api_url, url_path)
+        timeout = 20  # seconds
 
         if method is "get":
-            req = requests.request(method, url)
+            req = requests.request(method, url, timeout=timeout)
         else:
             headers = {'content-type': 'application/json'}
-            req = requests.request(method, url, data=json.dumps(data), headers=headers)
+            req = requests.request(method, url, data=json.dumps(data),
+                                   headers=headers, timeout=timeout)
 
         if req.status_code == 200:
             return req.json() or None
