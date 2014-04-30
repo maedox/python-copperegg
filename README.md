@@ -101,7 +101,7 @@ Or for more verbose output:
 
 	copperegg-cli --get-probes [probe id] --set-state disabled
 
-- Disable all probes tagged "dev":
+Disable all probes tagged "dev":
 
 	copperegg-cli --get-tags dev --set-state disabled
 
