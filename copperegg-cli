@@ -11,6 +11,7 @@ import argparse
 import json
 import logging
 import logging.handlers
+from multiprocessing.dummy import Pool
 from os import path
 from sys import stdout
 
@@ -80,6 +81,7 @@ class CopperEggCli(object):
 
     def __init__(self):
         self.api = copperegg.CopperEgg()
+        self.pool = Pool(20)
 
     def get_stations_from_region(self, region):
         output = []
@@ -214,7 +216,7 @@ class CopperEggCli(object):
                 exit(4)
 
         existing_probes = self.api.list_probes()
-        probes_to_change = []
+        probes_to_process = []
 
         for probe in existing_probes:
             probe_id = probe["id"]
@@ -224,13 +226,15 @@ class CopperEggCli(object):
                     probe_id in self.arg_get_probes or \
                     any(tag in self.arg_get_tags for tag in probe_tags):
 
-                probes_to_change.append(probe)
+                probes_to_process.append(probe)
 
-        if probes_to_change:
-            log.debug("Probes to change: %s", probes_to_change)
+        if probes_to_process:
+            log.debug("Probes to change: %s", probes_to_process)
 
-            for probe in probes_to_change:
-                self.process_probe(probe)
+            processing_results = self.pool.map(
+                self.process_probe, probes_to_process
+            )
+            log.debug(json.dumps(processing_results, indent=2))
 
         else:
             print("No matching probes found.")
