@@ -7,6 +7,7 @@
 __author__ = "Pål Nilsen (@maedox)"
 __version__ = "0.1"
 
+import argparse
 import json
 import logging
 import logging.handlers
@@ -75,159 +76,167 @@ log.setLevel("INFO")
 log.addHandler(log_handler)
 
 
-def get_stations_from_region(region):
-    output = []
-    if region in valid_regions:
-        for station in regions[region]:
-            output.append(station)
+class CopperEggCli(object):
 
-    return output
+    def __init__(self):
+        self.api = copperegg.CopperEgg()
 
+    def get_stations_from_region(self, region):
+        output = []
+        if region in valid_regions:
+            for station in regions[region]:
+                output.append(station)
 
-def get_stations(stations):
-    stations = list(stations)
-    region_stations = []
-    output = []
+        return output
 
-    for station in stations:
-        if station in valid_stations:
-            output.append(station)
+    def get_stations(self, stations):
+        stations = list(stations)
+        region_stations = []
+        output = []
 
-        elif station in valid_regions:
-            region_stations = get_stations_from_region(station)
+        for station in stations:
+            if station in valid_stations:
+                output.append(station)
 
-        if region_stations:
-            output.extend(region_stations)
+            elif station in valid_regions:
+                region_stations = self.get_stations_from_region(station)
 
-    return list(set().union(output, region_stations))
+            if region_stations:
+                output.extend(region_stations)
+
+        return list(set().union(output, region_stations))
+
+    def process_probe(self, probe):
+        data = {}
+
+        if self.arg_set_stations:
+            if "all" in self.arg_set_stations:
+                data["stations"] = ce_stations
+
+            elif self.replace_stations:
+                data["stations"] = self.arg_set_stations
+
+            else:
+                data["stations"] = probe["stations"]
+                for station in self.arg_set_stations:
+                    if station not in data["stations"]:
+                        data["stations"].append(station)
+
+        if self.arg_set_frequency:
+            data["frequency"] = self.arg_set_frequency
+
+        if self.arg_set_state:
+            data["state"] = self.arg_set_state
+
+        if self.noop:
+            log.debug("[NOOP] Current probe data:\n%s",
+                      json.dumps(probe, indent=2))
+            log.debug("[NOOP] Data that would be changed:\n%s",
+                      json.dumps(data, indent=2))
+            log.info("""[NOOP] Would have updated "%s" (id: %s), """
+                     """setting data: %s""",
+                     probe["probe_desc"], probe["id"], data)
+
+        else:
+            if data:
+                # TODO: Don't update probes when nothing's changed.
+                log.info("""Updating "%s" (id: %s), setting data: %s""",
+                         probe["probe_desc"], probe["id"], data)
+                return self.api.update_probe(probe["id"], data)
+            else:
+                log.info("""Matched probe "%s" (id: %s)""",
+                         probe["probe_desc"], probe["id"])
+
+    def main(self):
+        parser = argparse.ArgumentParser(
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+        parser.add_argument("--get-probes", nargs="+", default=[],
+                            metavar="id", help="Probe id, or all")
+        parser.add_argument("--get-tags", nargs="+", default=[],
+                            metavar="tag", help="Probe id, or all")
+        parser.add_argument("--set-state", choices=("enabled", "disabled"),
+                            default=None, help="Enable or disable a probe.")
+        parser.add_argument("--set-frequency", type=int,
+                            choices=valid_frequencies, metavar="frequency",
+                            help="Seconds between tests.")
+        parser.add_argument("--set-stations", nargs="+",
+                            default=[], metavar="station",
+                            choices=valid_stations + valid_regions,
+                            help="Stations to enable.")
+        parser.add_argument("--help-stations", action="store_true",
+                            help="Show list of valid station identifiers.")
+        parser.add_argument("--replace-stations", action="store_true",
+                            help="Replace stations with supplied list.")
+        parser.add_argument("--noop", action="store_true",
+                            help="Do nothing, just show what would have been done.")
+        parser.add_argument("--log-level", default="INFO", choices=valid_log_levels,
+                            help="Logging level.")
+        parser.add_argument("--silent", action="store_true",
+                            help="Stay silent and don't print actions to stdout."
+                                 " Logging will still occur.")
+
+        args = parser.parse_args()
+
+        log.setLevel(args.log_level)
+        if not args.silent:
+            log.addHandler(log_stdout)
+
+        self.arg_get_probes = args.get_probes
+        self.arg_get_tags = args.get_tags
+        self.arg_set_frequency = args.set_frequency
+        self.arg_set_stations = self.get_stations(args.set_stations)
+        self.arg_set_state = args.set_state
+
+        help_stations = args.help_stations
+        self.replace_stations = args.replace_stations
+        self.noop = args.noop
+
+        if help_stations:
+            print("Valid stations [region, id, location (provider)]:\n")
+            print(json.dumps(regions, indent=2))
+            print("\nYou may additionally use 'all' to enable all stations.")
+            exit(0)
+
+        if not self.arg_get_probes and not self.arg_get_tags:
+            print("You have to specify at least one probe or tag.\n")
+            parser.print_help()
+            exit(2)
+
+        if self.replace_stations and not self.arg_set_stations:
+            print("--replace-stations requires --set-stations to be set.\n")
+            parser.print_help()
+            exit(3)
+
+        elif self.replace_stations and len(self.arg_set_stations) < 3:
+            if "all" not in self.arg_set_stations:
+                print("Supply at least three stations when replacing.")
+                exit(4)
+
+        existing_probes = self.api.list_probes()
+        probes_to_change = []
+
+        for probe in existing_probes:
+            probe_id = probe["id"]
+            probe_tags = probe["tags"]
+
+            if "all" in self.arg_get_probes or "all" in self.arg_get_tags or \
+                    probe_id in self.arg_get_probes or \
+                    any(tag in self.arg_get_tags for tag in probe_tags):
+
+                probes_to_change.append(probe)
+
+        if probes_to_change:
+            log.debug("Probes to change: %s", probes_to_change)
+
+            for probe in probes_to_change:
+                self.process_probe(probe)
+
+        else:
+            print("No matching probes found.")
+            exit(0)
 
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument("--get-probes", nargs="+", default=[],
-                        metavar="id", help="Probe id, or all")
-    parser.add_argument("--get-tags", nargs="+", default=[],
-                        metavar="tag", help="Probe id, or all")
-    parser.add_argument("--set-state", choices=("enabled", "disabled"),
-                        default=None, help="Enable or disable a probe.")
-    parser.add_argument("--set-frequency", type=int,
-                        choices=valid_frequencies, metavar="frequency",
-                        help="Seconds between tests.")
-    parser.add_argument("--set-stations", nargs="+",
-                        default=[], metavar="station",
-                        choices=valid_stations + valid_regions,
-                        help="Stations to enable.")
-    parser.add_argument("--help-stations", action="store_true",
-                        help="Show list of valid station identifiers.")
-    parser.add_argument("--replace-stations", action="store_true",
-                        help="Replace stations with supplied list.")
-    parser.add_argument("--noop", action="store_true",
-                        help="Do nothing, just show what would have been done.")
-    parser.add_argument("--log-level", default="INFO", choices=valid_log_levels,
-                        help="Logging level.")
-    parser.add_argument("--silent", action="store_true",
-                        help="Stay silent and don't print actions to stdout."
-                             " Logging will still occur.")
-
-    args = parser.parse_args()
-
-    log.setLevel(args.log_level)
-    if not args.silent:
-        log.addHandler(log_stdout)
-
-    arg_get_probes = args.get_probes
-    arg_get_tags = args.get_tags
-    arg_set_frequency = args.set_frequency
-    arg_set_stations = args.set_stations
-    arg_set_state = args.set_state
-
-    help_stations = args.help_stations
-    replace_stations = args.replace_stations
-    noop = args.noop
-
-    if help_stations:
-        print("Valid stations [region, id, location (provider)]:\n")
-        print(json.dumps(regions, indent=2))
-        print("\nYou may additionally use 'all' to enable all stations.")
-        exit(0)
-
-    if not arg_get_probes and not arg_get_tags:
-        print("You have to specify at least one probe or tag.\n")
-        parser.print_help()
-        exit(2)
-
-    if replace_stations and not arg_set_stations:
-        print("--replace-stations requires --set-stations to be set.\n")
-        parser.print_help()
-        exit(3)
-
-    elif replace_stations and len(arg_set_stations) < 3:
-        if "all" not in arg_set_stations:
-            print("Supply at least three stations when replacing.")
-            exit(4)
-
-    api = copperegg.CopperEgg()
-    existing_probes = api.list_probes()
-    probes_to_change = []
-
-    for probe in existing_probes:
-        probe_id = probe["id"]
-        probe_tags = probe["tags"]
-        probe_stations = probe["stations"]
-
-        if "all" in arg_get_probes or "all" in arg_get_tags or \
-                probe_id in arg_get_probes or \
-                any(tag in arg_get_tags for tag in probe_tags):
-
-            probes_to_change.append(probe)
-
-    if probes_to_change:
-        log.debug("Probes to change: %s", probes_to_change)
-
-        for probe in probes_to_change:
-            data = {}
-
-            if arg_set_stations:
-                if "all" in arg_set_stations:
-                    data["stations"] = ce_stations
-
-                elif replace_stations:
-                    data["stations"] = get_stations(arg_set_stations)
-
-                else:
-                    data["stations"] = probe["stations"]
-                    for station in get_stations(arg_set_stations):
-                        if station not in data["stations"]:
-                            data["stations"].append(station)
-
-            if arg_set_frequency:
-                data["frequency"] = arg_set_frequency
-
-            if arg_set_state:
-                data["state"] = arg_set_state
-
-            if noop:
-                log.debug("[NOOP] Current probe data:\n%s",
-                          json.dumps(probe, indent=2))
-                log.debug("[NOOP] Data that would be changed:\n%s",
-                          json.dumps(data, indent=2))
-                log.info("""[NOOP] Would have updated "%s" (id: %s), """
-                         """setting data: %s""",
-                         probe["probe_desc"], probe["id"], data)
-
-            else:
-                if data:
-                    # TODO: Don't update probes when nothing's changed.
-                    log.info("""Updating "%s" (id: %s), setting data: %s""",
-                             probe["probe_desc"], probe["id"], data)
-                    api.update_probe(probe["id"], data)
-                else:
-                    log.info("""Matched probe "%s" (id: %s)""",
-                             probe["probe_desc"], probe["id"])
-
-    else:
-        print("No matching probes found.")
-        exit(0)
+    cli = CopperEggCli()
+    cli.main()
