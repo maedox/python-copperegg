@@ -206,7 +206,6 @@ class CopperEggCli(object):
         self.arg_get_tags = args.get_tags
         self.arg_set_frequency = args.set_frequency
         self.arg_set_stations = self.get_stations(args.set_stations)
-        log.debug(self.arg_set_stations)
         self.arg_set_state = args.set_state
 
         help_stations = args.help_stations
