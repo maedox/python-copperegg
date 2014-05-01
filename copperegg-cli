@@ -83,6 +83,8 @@ class CopperEggCli(object):
         self.api = copperegg.CopperEgg()
 
     def get_stations_from_region(self, region):
+        """ Returns a list of all stations in a given region
+        """
         output = []
         if region in valid_regions:
             for station in regions[region]:
@@ -91,56 +93,72 @@ class CopperEggCli(object):
         return output
 
     def get_stations(self, stations):
+        """ Returns a list of valid stations
+
+        Input can be any list of stations or regions.
+        """
         stations = list(stations)
         region_stations = []
-        output = []
 
-        for station in stations:
-            if station in valid_stations:
-                output.append(station)
+        if "all" in stations:
+            output = list(ce_stations)
 
-            elif station in valid_regions:
-                region_stations = self.get_stations_from_region(station)
+        else:
+            output = []
 
-            if region_stations:
-                output.extend(region_stations)
+            for station in stations:
+                if station in valid_stations:
+                    output.append(station)
+
+                elif station in valid_regions:
+                    region_stations = self.get_stations_from_region(station)
+
+                if region_stations:
+                    output.extend(region_stations)
 
         return list(set().union(output, region_stations))
 
     def process_probe(self, probe):
+        """ Process probes and decide if data changes are necessary
+        """
         data = {}
 
         if self.arg_set_stations:
-            if "all" in self.arg_set_stations:
-                data["stations"] = ce_stations
+            probe_stations = probe["stations"]
 
-            elif self.replace_stations:
-                data["stations"] = self.arg_set_stations
+            if any(s not in probe_stations for s in self.arg_set_stations):
+                if self.replace_stations:
+                    data["stations"] = list(self.arg_set_stations)
 
-            else:
-                data["stations"] = probe["stations"]
-                for station in self.arg_set_stations:
-                    if station not in data["stations"]:
-                        data["stations"].append(station)
+                else:
+                    data["stations"] = probe_stations
+                    for station in self.arg_set_stations:
+                        if station not in probe_stations:
+                            data["stations"].append(station)
 
-        if self.arg_set_frequency:
+        if self.arg_set_frequency and \
+                self.arg_set_frequency != probe["frequency"]:
             data["frequency"] = self.arg_set_frequency
 
-        if self.arg_set_state:
+        if self.arg_set_state and \
+                self.arg_set_state != probe["state"]:
             data["state"] = self.arg_set_state
 
         if self.noop:
             log.debug("[NOOP] Current probe data:\n%s",
                       json.dumps(probe, indent=2))
-            log.debug("[NOOP] Data that would be changed:\n%s",
-                      json.dumps(data, indent=2))
-            log.info("""[NOOP] Would have updated "%s" (id: %s), """
-                     """setting data: %s""",
-                     probe["probe_desc"], probe["id"], data)
+            if data:
+                log.debug("[NOOP] Data that would be changed:\n%s",
+                          json.dumps(data, indent=2))
+                log.info("""[NOOP] Would have updated "%s" (id: %s), """
+                         """setting data: %s""",
+                         probe["probe_desc"], probe["id"], data)
+
+            else:
+                log.info("[NOOP] No data to change.")
 
         else:
             if data:
-                # TODO: Don't update probes when nothing's changed.
                 log.info("""Updating "%s" (id: %s), setting data: %s""",
                          probe["probe_desc"], probe["id"], data)
                 return self.api.update_probe(probe["id"], data)
@@ -170,12 +188,13 @@ class CopperEggCli(object):
         parser.add_argument("--replace-stations", action="store_true",
                             help="Replace stations with supplied list.")
         parser.add_argument("--noop", action="store_true",
-                            help="Do nothing, just show what would have been done.")
-        parser.add_argument("--log-level", default="INFO", choices=valid_log_levels,
-                            help="Logging level.")
+                            help="Do nothing, "
+                                 "just show what would have been done.")
+        parser.add_argument("--log-level", default="INFO",
+                            choices=valid_log_levels, help="Logging level.")
         parser.add_argument("--silent", action="store_true",
-                            help="Stay silent and don't print actions to stdout."
-                                 " Logging will still occur.")
+                            help="Stay silent and don't print actions to "
+                                 "stdout. Logging will still occur.")
 
         args = parser.parse_args()
 
@@ -187,6 +206,7 @@ class CopperEggCli(object):
         self.arg_get_tags = args.get_tags
         self.arg_set_frequency = args.set_frequency
         self.arg_set_stations = self.get_stations(args.set_stations)
+        log.debug(self.arg_set_stations)
         self.arg_set_state = args.set_state
 
         help_stations = args.help_stations
@@ -218,23 +238,20 @@ class CopperEggCli(object):
         probes_to_process = []
 
         for probe in existing_probes:
-            probe_id = probe["id"]
-            probe_tags = probe["tags"]
-
             if "all" in self.arg_get_probes or "all" in self.arg_get_tags or \
-                    probe_id in self.arg_get_probes or \
-                    any(tag in self.arg_get_tags for tag in probe_tags):
-
+                    probe["id"] in self.arg_get_probes or \
+                    any(tag in self.arg_get_tags for tag in probe["tags"]):
                 probes_to_process.append(probe)
 
         if probes_to_process:
-            log.debug("Probes to change: %s", probes_to_process)
+            log.debug("Probes to process: %s", probes_to_process)
 
             pool = Pool(20)
-            processing_results = pool.map(self.process_probe, probes_to_process)
+            processing_result = pool.map(self.process_probe, probes_to_process)
             pool.close()
             pool.join()
-            log.debug(json.dumps(processing_results, indent=2))
+            log.debug("Processing result: %s",
+                      json.dumps(processing_result, indent=2))
 
         else:
             print("No matching probes found.")
