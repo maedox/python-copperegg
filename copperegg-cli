@@ -101,7 +101,7 @@ class CopperEggCli(object):
         region_stations = []
 
         if "all" in stations:
-            output = list(ce_stations)
+            return ce_stations
 
         else:
             output = []
@@ -116,7 +116,7 @@ class CopperEggCli(object):
                 if region_stations:
                     output.extend(region_stations)
 
-        return list(set().union(output, region_stations))
+            return list(set().union(output, region_stations))
 
     def process_probe(self, probe):
         """ Process probes and decide if data changes are necessary
