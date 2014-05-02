@@ -174,7 +174,7 @@ class CopperEggCli(object):
                         if self.replace_stations:
                             data["stations"] = new
 
-                        if any(True for field in new if field not in old):
+                        elif any(True for field in new if field not in old):
                             output = old
                             for field in new:
                                 if field not in old:
@@ -188,7 +188,7 @@ class CopperEggCli(object):
                         if self.replace_tags:
                             data["tags"] = new
 
-                        if any(True for field in new if field not in old):
+                        elif any(True for field in new if field not in old):
                             output = old
                             for field in new:
                                 if field not in old:
