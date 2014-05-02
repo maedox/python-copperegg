@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""Python wrapper for the CopperEgg API
+""" Python wrapper for the CopperEgg API
 """
 
 __author__ = "Pål Nilsen (@maedox)"
-__version__ = "0.1"
 
 
 import json
@@ -12,8 +11,8 @@ import json
 try:
     import requests
 except ImportError:
-    print("""The requests module is required. """
-          """See http://docs.python-requests.org/ for instructions.""")
+    print("The requests module is required. "
+          "See http://docs.python-requests.org/ for instructions.")
     raise
 
 
