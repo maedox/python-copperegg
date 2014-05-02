@@ -5,7 +5,6 @@
 """
 
 __author__ = "Pål Nilsen (@maedox)"
-__version__ = "0.1"
 
 import argparse
 import json
@@ -367,6 +366,7 @@ class CopperEggCli(object):
                 log.error("--set-desc, --set-dest and --set-type are all "
                           "required when adding a probe.")
                 exit(5)
+
         self.existing_probes = self.api.list_probes() or []
         self.probes_to_process = []
 
@@ -383,6 +383,13 @@ class CopperEggCli(object):
         if self.probes_to_process:
             if self.add:
                 self.process_probe(self.probes_to_process)
+
+            elif self.delete and not self.force and \
+                    len(self.probes_to_process) > 5:
+                log.error("If you really want to delete %s probes, you need "
+                          "to supply the --force argument.",
+                          len(self.probes_to_process))
+                exit(1)
 
             else:
                 log.debug("Probes to process: %s",
