@@ -170,10 +170,13 @@ class CopperEggCli(object):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+        # Search arguments
         parser.add_argument("--get-probes", nargs="+", default=[],
                             metavar="id", help="Probe id or all")
         parser.add_argument("--get-tags", nargs="+", default=[],
                             metavar="tag", help="Tag or all")
+
+        # Data setting arguments
         parser.add_argument("--set-state", choices=("enabled", "disabled"),
                             default=None, help="Enable or disable a probe.")
         parser.add_argument("--set-frequency", type=int,
@@ -183,13 +186,19 @@ class CopperEggCli(object):
                             default=[], metavar="station",
                             choices=valid_stations + valid_regions,
                             help="Stations to enable.")
-        parser.add_argument("--help-stations", action="store_true",
-                            help="Show list of valid station identifiers.")
+
+        # Action arguments
         parser.add_argument("--replace-stations", action="store_true",
                             help="Replace stations with supplied list.")
         parser.add_argument("--noop", action="store_true",
                             help="Do nothing, "
                                  "just show what would have been done.")
+
+        # Help arguments
+        parser.add_argument("--help-stations", action="store_true",
+                            help="Show list of valid station identifiers.")
+
+        # Output controlling arguments
         parser.add_argument("--log-level", default="INFO",
                             choices=valid_log_levels, help="Logging level.")
         parser.add_argument("--silent", action="store_true",
