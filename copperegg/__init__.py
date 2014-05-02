@@ -33,7 +33,7 @@ class CopperEgg(object):
             return self.value
 
     def call_api(self, method, url_path, data=None):
-        if method not in ("get", "post", "put"):
+        if method not in ("get", "post", "put", "delete"):
             raise self.APIError(
                 """Unsupported request method: {0}\n"""
                 """Must be one of: get, post, put""".format(method))
@@ -41,7 +41,7 @@ class CopperEgg(object):
         url = "{0}{1}".format(self.api_url, url_path)
         timeout = 20  # seconds
 
-        if method is "get":
+        if method in ("get", "delete"):
             req = requests.request(method, url, timeout=timeout)
         else:
             headers = {'content-type': 'application/json'}
@@ -66,3 +66,14 @@ class CopperEgg(object):
     def update_probe(self, probe_id, data):
         path = self.get_probe_path(probe_id)
         return self.call_api("put", path, data)
+
+    def add_probe(self, data):
+        for param in ('probe_desc', 'type', 'probe_dest'):
+            if param not in data:
+                raise self.APIError("probe_desc, type and probe_dest are "
+                                    "required parameters when adding a probe.")
+        return self.call_api("post", self.probes_list_path, data)
+
+    def delete_probe(self, probe_id):
+        path = self.get_probe_path(probe_id)
+        return self.call_api("delete", path)

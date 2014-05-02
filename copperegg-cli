@@ -22,6 +22,7 @@ except ImportError:
           """See https://github.com/maedox/python-copperegg""")
 
 valid_frequencies = (15, 60, 300)
+valid_types = ("GET", "POST", "TCP", "ICMP")
 
 regions = {
     "us-east": {
@@ -123,45 +124,130 @@ class CopperEggCli(object):
         """
         data = {}
 
-        if self.arg_set_stations:
-            probe_stations = probe["stations"]
+        if not self.delete:
+            if self.add:
+                if any(self.arg_set_dest in p["probe_dest"]
+                        for p in self.existing_probes) and not self.force:
+                    log.error("""Probe with URL "%s" already exists. """
+                              "Add the --force argument to add it anyway.",
+                              self.arg_set_dest)
+                    exit(1)
 
-            if any(s not in probe_stations for s in self.arg_set_stations):
-                if self.replace_stations:
-                    data["stations"] = list(self.arg_set_stations)
+                data["probe_desc"] = self.arg_set_desc
+                data["probe_dest"] = self.arg_set_dest
+                data["type"] = self.arg_set_type
 
-                else:
-                    data["stations"] = probe_stations
-                    for station in self.arg_set_stations:
-                        if station not in probe_stations:
-                            data["stations"].append(station)
+                if self.arg_set_frequency:
+                    data["frequency"] = self.arg_set_frequency
 
-        if self.arg_set_frequency and \
-                self.arg_set_frequency != probe["frequency"]:
-            data["frequency"] = self.arg_set_frequency
+                if self.arg_set_stations:
+                    data["stations"] = self.arg_set_stations
 
-        if self.arg_set_state and \
-                self.arg_set_state != probe["state"]:
-            data["state"] = self.arg_set_state
-
-        if self.noop:
-            log.debug("[NOOP] Current probe data:\n%s",
-                      json.dumps(probe, indent=2))
-            if data:
-                log.debug("[NOOP] Data that would be changed:\n%s",
-                          json.dumps(data, indent=2))
-                log.info("""[NOOP] Would have updated "%s" (id: %s), """
-                         """setting data: %s""",
-                         probe["probe_desc"], probe["id"], data)
+                if self.arg_set_tags:
+                    data["tags"] = self.arg_set_tags
 
             else:
-                log.info("[NOOP] No data to change.")
+                if self.arg_set_state and \
+                        self.arg_set_state != probe["state"]:
+                    data["state"] = self.arg_set_state
+
+                if len(self.probes_to_process) == 1 or self.force:
+                    if self.arg_set_desc and \
+                            self.arg_set_desc != probe["probe_desc"]:
+                        data["probe_desc"] = self.arg_set_desc
+
+                    if self.arg_set_dest and \
+                            self.arg_set_dest != probe["probe_dest"]:
+                        data["probe_dest"] = self.arg_set_dest
+
+                if self.arg_set_type and \
+                        self.arg_set_type != probe["type"]:
+                    data["type"] = self.arg_set_type
+
+                if self.arg_set_frequency and \
+                        self.arg_set_frequency != probe["frequency"]:
+                    data["frequency"] = self.arg_set_frequency
+
+                if self.arg_set_stations:
+                    old = sorted(probe["stations"])
+                    new = sorted(self.arg_set_stations)
+                    if old != new:
+                        if self.replace_stations:
+                            data["stations"] = new
+
+                        if any(True for field in new if field not in old):
+                            output = old
+                            for field in new:
+                                if field not in old:
+                                    output.append(field)
+                            data["stations"] = output
+
+                if self.arg_set_tags:
+                    old = sorted(probe["tags"])
+                    new = sorted(self.arg_set_tags)
+                    if old != new:
+                        if self.replace_tags:
+                            data["tags"] = new
+
+                        if any(True for field in new if field not in old):
+                            output = old
+                            for field in new:
+                                if field not in old:
+                                    output.append(field)
+                            data["tags"] = output
+
+        if self.noop:
+            if not self.add:
+                log.debug("[NOOP] Current probe data:\n%s",
+                          json.dumps(probe, indent=2))
+
+            if data:
+                if self.add:
+                    log.info("""[NOOP] Would have added "%s", data: %s""",
+                             self.arg_set_desc, json.dumps(data, indent=2))
+
+                else:
+                    log.debug("[NOOP] Data that would be changed:\n%s",
+                              json.dumps(data, indent=2))
+                    log.info("""[NOOP] Would have updated "%s" (id: %s), """
+                             """setting data: %s""",
+                             probe["probe_desc"], probe["id"],
+                             json.dumps(data, indent=2))
+
+            elif self.delete:
+                log.info("""[NOOP] Would have deleted "%s" (id: %s), data: %s""",
+                         probe["probe_desc"], probe["id"],
+                         json.dumps(probe, indent=2))
+
+            else:
+                log.info("""[NOOP] Probe "%s" (id: %s): No changes.""",
+                         probe["probe_desc"], probe["id"])
 
         else:
             if data:
-                log.info("""Updating "%s" (id: %s), setting data: %s""",
-                         probe["probe_desc"], probe["id"], data)
-                return self.api.update_probe(probe["id"], data)
+                if self.add:
+                    log.info("""Adding "%s", data: %s""",
+                             self.arg_set_desc, json.dumps(data, indent=2))
+                    new_probe = self.api.add_probe(data)
+                    log.info("Added new probe: %s",
+                             json.dumps(new_probe, indent=2))
+
+                else:
+                    if len(self.probes_to_process) > 1 and not self.force and \
+                            "probe_desc" in probe or "probe_dest" in probe:
+                        log.warning("If you want to set probe_desc and/or "
+                                    "probe_dest on multiple probes you have to "
+                                    "add the --force argument.")
+
+                    log.info("""Updating "%s" (id: %s), setting data: %s""",
+                             probe["probe_desc"], probe["id"], data)
+                    return self.api.update_probe(probe["id"], data)
+
+            elif self.delete:
+                log.info("""Deleting "%s", data: %s""",
+                         probe["probe_desc"], json.dumps(probe, indent=2))
+                return self.api.delete_probe(probe["id"])
+
             else:
                 log.info("""Matched probe "%s" (id: %s)""",
                          probe["probe_desc"], probe["id"])
@@ -179,20 +265,37 @@ class CopperEggCli(object):
         # Data setting arguments
         parser.add_argument("--set-state", choices=("enabled", "disabled"),
                             default=None, help="Enable or disable a probe.")
+        parser.add_argument("--set-desc",
+                            help="Probe description or name.")
         parser.add_argument("--set-frequency", type=int,
                             choices=valid_frequencies, metavar="frequency",
                             help="Seconds between tests.")
-        parser.add_argument("--set-stations", nargs="+",
-                            default=[], metavar="station",
+        parser.add_argument("--set-type", choices=valid_types,
+                            help="Type of probe.")
+        parser.add_argument("--set-dest",
+                            help="Destination URL for the probe.")
+        parser.add_argument("--set-stations", nargs="+", default=[],
                             choices=valid_stations + valid_regions,
                             help="Stations to enable.")
+        parser.add_argument("--set-tags", nargs="+", default=[],
+                            help="Tags to set.")
 
         # Action arguments
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument("--add", action="store_true",
+                           help="Add a probe.")
+        group.add_argument("--delete", action="store_true",
+                           help="Delete one or more probes.")
+
         parser.add_argument("--replace-stations", action="store_true",
                             help="Replace stations with supplied list.")
+        parser.add_argument("--replace-tags", action="store_true",
+                            help="Replace tags with supplied list.")
         parser.add_argument("--noop", action="store_true",
                             help="Do nothing, "
                                  "just show what would have been done.")
+        parser.add_argument("--force", action="store_true",
+                            help="Override add/delete restrictions.")
 
         # Help arguments
         parser.add_argument("--help-stations", action="store_true",
@@ -207,19 +310,35 @@ class CopperEggCli(object):
 
         args = parser.parse_args()
 
+        # Search arguments
+        self.arg_get_probes = args.get_probes
+        self.arg_get_tags = args.get_tags
+
+        # Data setting arguments
+        self.arg_set_desc = args.set_desc
+        self.arg_set_frequency = args.set_frequency
+        self.arg_set_type = args.set_type
+        self.arg_set_dest = args.set_dest
+        self.arg_set_stations = self.get_stations(args.set_stations)
+        self.arg_set_tags = args.set_tags
+        self.arg_set_state = args.set_state
+
+        # Action arguments
+        self.add = args.add
+        self.delete = args.delete
+
+        self.noop = args.noop
+        self.force = args.force
+        self.replace_tags = args.replace_tags
+        self.replace_stations = args.replace_stations
+
+        # Help arguments
+        help_stations = args.help_stations
+
+        # Output controlling arguments
         log.setLevel(args.log_level)
         if not args.silent:
             log.addHandler(log_stdout)
-
-        self.arg_get_probes = args.get_probes
-        self.arg_get_tags = args.get_tags
-        self.arg_set_frequency = args.set_frequency
-        self.arg_set_stations = self.get_stations(args.set_stations)
-        self.arg_set_state = args.set_state
-
-        help_stations = args.help_stations
-        self.replace_stations = args.replace_stations
-        self.noop = args.noop
 
         if help_stations:
             print("Valid stations [region, id, location (provider)]:\n")
@@ -227,7 +346,7 @@ class CopperEggCli(object):
             print("\nYou may additionally use 'all' to enable all stations.")
             exit(0)
 
-        if not self.arg_get_probes and not self.arg_get_tags:
+        if not self.add and not self.arg_get_probes and not self.arg_get_tags:
             log.error("You have to specify at least one probe or tag.")
             parser.print_help()
             exit(2)
@@ -242,24 +361,41 @@ class CopperEggCli(object):
                 log.error("Supply at least three stations when replacing.")
                 exit(4)
 
-        existing_probes = self.api.list_probes() or []
-        probes_to_process = []
+        if self.add:
+            if not self.arg_set_desc or not self.arg_set_dest or not \
+                    self.arg_set_type:
+                log.error("--set-desc, --set-dest and --set-type are all "
+                          "required when adding a probe.")
+                exit(5)
+        self.existing_probes = self.api.list_probes() or []
+        self.probes_to_process = []
 
-        for probe in existing_probes:
-            if "all" in self.arg_get_probes or "all" in self.arg_get_tags or \
-                    probe["id"] in self.arg_get_probes or \
-                    any(tag in self.arg_get_tags for tag in probe["tags"]):
-                probes_to_process.append(probe)
+        if self.add:
+            self.probes_to_process = [{"probe_desc": self.arg_set_desc}]
 
-        if probes_to_process:
-            log.debug("Probes to process: %s", probes_to_process)
+        else:
+            for probe in self.existing_probes:
+                if "all" in self.arg_get_probes or "all" in self.arg_get_tags or \
+                        probe["id"] in self.arg_get_probes or \
+                        any(tag in self.arg_get_tags for tag in probe["tags"]):
+                    self.probes_to_process.append(probe)
 
-            pool = Pool(20)
-            processing_result = pool.map(self.process_probe, probes_to_process)
-            pool.close()
-            pool.join()
-            log.debug("Processing result: %s",
-                      json.dumps(processing_result, indent=2))
+        if self.probes_to_process:
+            if self.add:
+                self.process_probe(self.probes_to_process)
+
+            else:
+                log.debug("Probes to process: %s",
+                          json.dumps(self.probes_to_process, indent=2))
+
+                pool = Pool(20)
+                processing_result = pool.map(
+                    self.process_probe, self.probes_to_process
+                )
+                pool.close()
+                pool.join()
+                log.debug("Processing result: %s",
+                          json.dumps(processing_result, indent=2))
 
         else:
             log.info("No matching probes found.")
