@@ -171,9 +171,9 @@ class CopperEggCli(object):
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
         parser.add_argument("--get-probes", nargs="+", default=[],
-                            metavar="id", help="Probe id, or all")
+                            metavar="id", help="Probe id or all")
         parser.add_argument("--get-tags", nargs="+", default=[],
-                            metavar="tag", help="Probe id, or all")
+                            metavar="tag", help="Tag or all")
         parser.add_argument("--set-state", choices=("enabled", "disabled"),
                             default=None, help="Enable or disable a probe.")
         parser.add_argument("--set-frequency", type=int,
