@@ -219,23 +219,23 @@ class CopperEggCli(object):
             exit(0)
 
         if not self.arg_get_probes and not self.arg_get_tags:
-            print("You have to specify at least one probe or tag.\n")
+            log.error("You have to specify at least one probe or tag.")
             parser.print_help()
             exit(2)
 
         if self.replace_stations and not self.arg_set_stations:
-            print("--replace-stations requires --set-stations to be set.\n")
+            log.error("--replace-stations requires --set-stations to be set.")
             parser.print_help()
             exit(3)
 
         elif self.replace_stations and len(self.arg_set_stations) < 3:
             if "all" not in self.arg_set_stations:
-                print("Supply at least three stations when replacing.")
+                log.error("Supply at least three stations when replacing.")
                 exit(4)
 
         existing_probes = self.api.list_probes()
         if not existing_probes:
-            print("No probes found.")
+            log.info("No probes found.")
             exit(0)
 
         probes_to_process = []
@@ -257,7 +257,7 @@ class CopperEggCli(object):
                       json.dumps(processing_result, indent=2))
 
         else:
-            print("No matching probes found.")
+            log.info("No matching probes found.")
             exit(0)
 
 
