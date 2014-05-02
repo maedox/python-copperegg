@@ -19,6 +19,7 @@ except ImportError:
 class CopperEgg(object):
 
     def __init__(self):
+        self.valid_methods = ("get", "post", "put", "delete")
         self.api_url = "https://api.copperegg.com"
         self.probes_list_path = "/v2/revealuptime/probes.json"
         self.probes_path = "/v2/revealuptime/probes"
@@ -32,20 +33,22 @@ class CopperEgg(object):
             return self.value
 
     def call_api(self, method, url_path, data=None):
-        if method not in ("get", "post", "put", "delete"):
+        if method not in self.valid_methods:
             raise self.APIError(
                 """Unsupported request method: {0}\n"""
-                """Must be one of: get, post, put""".format(method))
+                """Must be one of: {1}""".format(method,
+                                                 ", ".join(self.valid_methods)))
 
         url = "{0}{1}".format(self.api_url, url_path)
         timeout = 20  # seconds
 
         if method in ("get", "delete"):
-            req = requests.request(method, url, timeout=timeout)
+            req = requests.request(method, url, timeout=timeout, verify=True)
         else:
             headers = {'content-type': 'application/json'}
             req = requests.request(method, url, data=json.dumps(data),
-                                   headers=headers, timeout=timeout)
+                                   headers=headers, timeout=timeout,
+                                   verify=True)
 
         if req.status_code == 200:
             return req.json() or None
