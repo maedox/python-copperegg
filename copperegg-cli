@@ -10,6 +10,7 @@ import argparse
 import json
 import logging
 import logging.handlers
+from datetime import datetime
 from multiprocessing.dummy import Pool
 from os import path
 from sys import stdout
@@ -112,6 +113,10 @@ class CopperEggCli(object):
                 log.error("--set-desc, --set-dest and --set-type are all "
                           "required when adding a probe.")
                 exit(5)
+
+    def convert_unix_time(self, timestamp):
+        return datetime.fromtimestamp(
+            int(timestamp)).strftime('%Y-%m-%d %H:%M:%S')
 
     def get_stations_from_region(self, region):
         """ Returns a list of all stations in a given region
@@ -283,15 +288,20 @@ class CopperEggCli(object):
             return self.print_noop_text(probe, data)
 
         else:
+            if self.args.delete:
+                return self.delete_probe(probe)
+
             if data:
                 return self.update_probe(probe, data)
 
-            elif self.args.delete:
-                return self.delete_probe(probe)
-
             else:
-                log.info("""Matched probe "%s" (id: %s)""",
-                         probe["probe_desc"], probe["id"])
+                log.info("No changes: %s (id: %s, created: %s, updated: %s): "
+                         "Check: %s %s, Interval: %d s, Stations: [%s], "
+                         "Tags: [%s]", probe["probe_desc"], probe["id"],
+                         self.convert_unix_time(probe["created_at"]),
+                         self.convert_unix_time(probe["updated_at"]),
+                         probe["type"], probe["probe_dest"], probe["frequency"],
+                         ", ".join(probe["stations"]), ", ".join(probe["tags"]))
 
     def main(self):
         parser = argparse.ArgumentParser(
