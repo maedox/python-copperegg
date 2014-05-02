@@ -187,7 +187,7 @@ class CopperEggCli(object):
 
         else:
             if len(self.probes_to_process) > 1 and not self.args.force and \
-                    "probe_desc" in probe or "probe_dest" in probe:
+                    "probe_desc" in data or "probe_dest" in data:
                 log.warning("If you want to set probe_desc and/or "
                             "probe_dest on multiple probes you have to "
                             "add the --force argument.")
