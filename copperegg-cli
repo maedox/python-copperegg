@@ -242,11 +242,7 @@ class CopperEggCli(object):
                 log.error("Supply at least three stations when replacing.")
                 exit(4)
 
-        existing_probes = self.api.list_probes()
-        if not existing_probes:
-            log.info("No probes found.")
-            exit(0)
-
+        existing_probes = self.api.list_probes() or []
         probes_to_process = []
 
         for probe in existing_probes:
