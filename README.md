@@ -8,14 +8,15 @@ Make sure you have read and understood the code before using it for any purpose.
 
 ## Features
 
-- Listing and updating probes.
+- Listing, updating, adding and deleting probes.
+- Set stations, tags and more.
 
 ### Recently added
 - Enabling stations by region
+- Allow adding and deleting probes
 
 ### Coming soon
-- Adding new probes
-- Deleting probes
+- Allow changing all possible settings for a probe
 
 Let me know if there are features you would like to see in the future.
 
