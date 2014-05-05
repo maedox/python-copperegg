@@ -143,16 +143,15 @@ class CopperEggCli(object):
             output = []
 
             for station in stations:
-                if station in valid_stations:
+                if station in valid_stations and station not in output:
                     output.append(station)
 
                 elif station in valid_regions:
-                    region_stations = self.get_stations_from_region(station)
+                    for s in self.get_stations_from_region(station):
+                        if s not in output:
+                            output.append(s)
 
-                if region_stations:
-                    output.extend(region_stations)
-
-            return list(set().union(output, region_stations))
+            return output
 
     def print_noop_text(self, probe, data):
         if not self.args.add:
