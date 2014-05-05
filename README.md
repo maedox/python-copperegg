@@ -10,10 +10,10 @@ Make sure you have read and understood the code before using it for any purpose.
 
 - Listing, updating, adding and deleting probes.
 - Set stations, tags and more.
+- Enable stations by region
 
 ### Recently added
-- Enabling stations by region
-- Allow adding and deleting probes
+- Search for probes by name using case-insensitive regexp's, substring search.
 
 ### Coming soon
 - Allow changing all possible settings for a probe
@@ -88,7 +88,16 @@ Or for more verbose output:
 
 	copperegg-cli --get-probes all --log-level DEBUG | less
 
-### Find probes by tag
+### Finding probes
+You may supply multiple filters for the --get- arguments.
+
+#### Find all probes where the name contains "test"
+
+	copperegg-cli --get-names test
+
+#### Find all probes tagged or where the name starts with "production"
+
+	copperegg-cli --get-names '^production' --get-tags production
 
 #### Match probes tagged "dev" or "test":
 
@@ -99,6 +108,11 @@ Or for more verbose output:
 	copperegg-cli --get-tags demo
 
 ### Modifying probes
+Tip: Add the --noop argument to see changes without actually applying them.
+
+#### If probe name starts with "dev", tag it "dev" and check every 300 seconds
+
+	copperegg-cli --get-names '^dev' --set-tags dev --set-frequency 300
 
 #### Enable or disable probes
 
