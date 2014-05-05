@@ -10,7 +10,7 @@ import argparse
 import json
 import logging
 import logging.handlers
-from datetime import datetime
+import time
 from multiprocessing.dummy import Pool
 from os import path
 from sys import stdout
@@ -115,8 +115,8 @@ class CopperEggCli(object):
                 exit(5)
 
     def convert_unix_time(self, timestamp):
-        return datetime.fromtimestamp(
-            int(timestamp)).strftime('%Y-%m-%d %H:%M:%S')
+        """ Converts seconds since epoch into 'yyyy-mm-dd hh:mm:ss tzname' """
+        return time.strftime("%F %T %Z", time.localtime(int(timestamp)))
 
     def get_stations_from_region(self, region):
         """ Returns a list of all stations in a given region
