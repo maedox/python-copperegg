@@ -100,19 +100,21 @@ class CopperEggCli(object):
 
         if self.args.replace_stations and not self.args.set_stations:
             log.error("--replace-stations requires --set-stations to be set.")
-            exit(3)
+            return False
 
         elif self.args.replace_stations and len(self.args.set_stations) < 3:
             if "all" not in self.args.set_stations:
                 log.error("Supply at least three stations when replacing.")
-                exit(4)
+                return False
 
         if self.args.add:
             if not self.args.set_desc or not self.args.set_dest or not \
                     self.args.set_type:
                 log.error("--set-desc, --set-dest and --set-type are all "
                           "required when adding a probe.")
-                exit(5)
+                return False
+
+        return True
 
     def convert_unix_time(self, timestamp):
         """ Converts seconds since epoch into 'yyyy-mm-dd hh:mm:ss tzname' """
@@ -134,7 +136,6 @@ class CopperEggCli(object):
         Input can be any list of stations or regions.
         """
         stations = list(stations)
-        region_stations = []
 
         if "all" in stations:
             return ce_stations
@@ -325,8 +326,7 @@ class CopperEggCli(object):
         parser.add_argument("--set-dest",
                             help="Destination URL for the probe.")
         parser.add_argument("--set-stations", nargs="+", default=[],
-                            choices=valid_stations + valid_regions,
-                            help="Stations to enable.")
+                            choices=valid_stations, help="Stations to enable.")
         parser.add_argument("--set-tags", nargs="+", default=[],
                             help="Tags to set.")
 
@@ -361,7 +361,9 @@ class CopperEggCli(object):
         self.args = parser.parse_args()
         self.args.set_stations = self.get_stations(self.args.set_stations)
 
-        self.check_arguments()
+        if not self.check_arguments():
+            parser.print_help()
+            exit(1)
 
         self.existing_probes = self.api.list_probes() or []
         self.probes_to_process = []
