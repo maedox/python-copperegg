@@ -13,6 +13,7 @@ Make sure you have read and understood the code before using it for any purpose.
 - Enable stations by region
 
 ### Recently added
+- Backup and restore functionality.
 - Search for probes by name using case-insensitive regexp's, substring search.
 
 ### Coming soon
@@ -59,16 +60,16 @@ Set the check interval to 15 seconds for probe_id:
 
 **Note the --noop argument which should make this utility quite safe.
 Adding --noop will just print what would be done without actually making
-any requests to the CopperEgg API. Pay close attention to your CLI arguments
-and when in doubt, use --noop.**
+any changes via the CopperEgg API. Pay close attention to your CLI arguments
+and when in doubt create a backup of your data with --backup.**
 
-### View available commands
+### View available arguments, commands and valid options
 
 	copperegg-cli --help
 
 ### Logging and standard output verbosity
-By default copperegg-cli will print log messages to stdout and to ~/.copperegg-cli.log
-There are a few ways to change this behavior.
+By default copperegg-cli will print log messages to stdout and to
+~/.copperegg-cli.log. There are a few ways to change this behavior:
 
 #### Disable stdout printing
 
@@ -87,6 +88,27 @@ There are a few ways to change this behavior.
 Or for more verbose output:
 
 	copperegg-cli --get-probes all --log-level DEBUG | less
+
+### Backup and restore probes
+CopperEgg-CLI can now backup all probe data to stdout. The output is JSON
+directly from the CopperEgg API, so you can do your own operations to it or
+redirect it to a file.
+
+When restoring data it will by default ignore existing probes, using the URL as
+primary key, and log an error message. If you pass it the --force argument it
+will restore all possible data.
+
+#### Backup all probes
+
+	copperegg-cli --backup > /path/to/file.json
+
+#### Restore probes from backup that don't already exist
+
+	copperegg-cli --restore /path/to/file.json
+
+#### Restore all probes from backup regardless if they exist
+
+	copperegg-cli --force --restore /path/to/file.json
 
 ### Finding probes
 You may supply multiple filters for the --get- arguments.
