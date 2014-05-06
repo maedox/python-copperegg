@@ -74,7 +74,7 @@ log_stdout.setFormatter(log_format)
 
 log = logging.getLogger(log_path)
 
-valid_log_levels = ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET")
+valid_log_levels = ("ERROR", "WARNING", "INFO", "DEBUG")
 log.setLevel("INFO")
 log.addHandler(log_handler)
 
@@ -365,30 +365,30 @@ class CopperEggCli(object):
 
         # Search arguments
         parser.add_argument("--get-probes", nargs="+", default=[],
-                            metavar="id", help="Probe id or all")
+                            metavar="ID", help="Probe id or all")
         parser.add_argument("--get-tags", nargs="+", default=[],
-                            metavar="tag", help="Tag or all")
+                            metavar="TAG", help="Tag or all")
         parser.add_argument("--get-names", nargs="+", default=[],
-                            metavar="regex",
+                            metavar="REGEX",
                             help="Search in probe name. Regex, substring, "
                             "case-insensitive.")
 
         # Data setting arguments
         parser.add_argument("--set-state", choices=("enabled", "disabled"),
                             default=None, help="Enable or disable a probe.")
-        parser.add_argument("--set-desc",
+        parser.add_argument("--set-desc", metavar="NAME",
                             help="Probe description or name.")
-        parser.add_argument("--set-frequency", type=int,
-                            choices=valid_frequencies, metavar="frequency",
+        parser.add_argument("--set-frequency",
+                            choices=valid_frequencies,
                             help="Seconds between tests.")
         parser.add_argument("--set-type", choices=valid_types,
                             help="Type of probe.")
-        parser.add_argument("--set-dest",
+        parser.add_argument("--set-dest", metavar="URL",
                             help="Destination URL for the probe.")
         parser.add_argument("--set-stations", nargs="+", default=[],
                             choices=valid_stations + valid_regions,
-                            help="Stations to enable.")
-        parser.add_argument("--set-tags", nargs="+", default=[],
+                            metavar="STATION", help="Stations to enable.")
+        parser.add_argument("--set-tags", nargs="+", default=[], metavar="TAG",
                             help="Tags to set.")
 
         # Action arguments
