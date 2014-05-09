@@ -378,7 +378,7 @@ class CopperEggCli(object):
                             default=None, help="Enable or disable a probe.")
         parser.add_argument("--set-desc", metavar="NAME",
                             help="Probe description or name.")
-        parser.add_argument("--set-frequency",
+        parser.add_argument("--set-frequency", type=int,
                             choices=valid_frequencies,
                             help="Seconds between tests.")
         parser.add_argument("--set-type", choices=valid_types,
