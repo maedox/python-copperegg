@@ -83,7 +83,7 @@ class CopperEggCli(object):
 
     def __init__(self):
         self.api = copperegg.CopperEgg()
-        self.existing_probes = self.api.list_probes() or []
+        self.existing_probes = []
         self.probes_to_process = []
         self.args = None
 
@@ -441,6 +441,8 @@ class CopperEggCli(object):
         if not self.check_arguments():
             parser.print_help()
             exit(1)
+
+        self.existing_probes = self.api.list_probes() or []
 
         if self.args.backup:
             return self.backup(self.existing_probes)
