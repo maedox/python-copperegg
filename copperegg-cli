@@ -137,11 +137,13 @@ class CopperEggCli(object):
 
         return True
 
-    def convert_unix_time(self, timestamp):
+    @staticmethod
+    def convert_unix_time(timestamp):
         """ Converts seconds since epoch into 'yyyy-mm-dd hh:mm:ss tzname' """
         return time.strftime("%F %T %Z", time.localtime(int(timestamp)))
 
-    def get_stations_from_region(self, region):
+    @staticmethod
+    def get_stations_from_region(region):
         """ Returns a list of all stations in a given region
         """
         output = []
@@ -169,9 +171,9 @@ class CopperEggCli(object):
                     output.append(station)
 
                 elif station in valid_regions:
-                    for s in self.get_stations_from_region(station):
-                        if s not in output:
-                            output.append(s)
+                    for stn in self.get_stations_from_region(station):
+                        if stn not in output:
+                            output.append(stn)
 
             return output
 
@@ -231,10 +233,9 @@ class CopperEggCli(object):
             return False
 
         if not data:
-            data = {}
-            data["probe_desc"] = desc
-            data["probe_dest"] = dest
-            data["type"] = probe_type
+            data = {"probe_desc": desc,
+                    "probe_dest": dest,
+                    "type": probe_type}
 
             if self.args.set_frequency:
                 data["frequency"] = self.args.set_frequency
@@ -278,7 +279,8 @@ class CopperEggCli(object):
         self.api.delete_probe(probe["id"])
         return True
 
-    def process_threaded(self, function, data):
+    @staticmethod
+    def process_threaded(function, data):
         """ Process iterable data using function in multiple threads
         """
         pool = Pool(20)
