@@ -355,11 +355,12 @@ class CopperEggCli(object):
             else:
                 log.info("No changes: %s (id: %s, created: %s, updated: %s): "
                          "Check: %s %s, Interval: %d s, Stations: [%s], "
-                         "Tags: [%s]", probe["probe_desc"], probe["id"],
+                         "Tags: [%s], State: %s", probe["probe_desc"], probe["id"],
                          self.convert_unix_time(probe["created_at"]),
                          self.convert_unix_time(probe["updated_at"]),
                          probe["type"], probe["probe_dest"], probe["frequency"],
-                         ", ".join(probe["stations"]), ", ".join(probe["tags"]))
+                         ", ".join(probe["stations"]), ", ".join(probe["tags"]),
+                         probe["state"])
 
     def main(self):
         parser = argparse.ArgumentParser(
