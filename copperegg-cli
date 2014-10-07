@@ -83,6 +83,9 @@ class CopperEggCli(object):
 
     def __init__(self):
         self.api = copperegg.CopperEgg()
+        self.existing_probes = self.api.list_probes() or []
+        self.probes_to_process = []
+        self.args = None
 
     def backup(self, probes):
         """ Print all existing probe data to stdout
@@ -435,8 +438,6 @@ class CopperEggCli(object):
             parser.print_help()
             exit(1)
 
-        self.existing_probes = self.api.list_probes() or []
-
         if self.args.backup:
             return self.backup(self.existing_probes)
 
@@ -448,7 +449,6 @@ class CopperEggCli(object):
             return self.add_probe()
 
         # Filter existing probes according to command-line arguments
-        self.probes_to_process = []
         for probe in self.existing_probes:
             name = probe["probe_desc"]
             name_filter = "|".join(self.args.get_names)
