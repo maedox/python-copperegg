@@ -462,23 +462,30 @@ class CopperEggCli(object):
             # Get all probes
             if (self.args.get_probes == ['all'] or
                     self.args.get_tags == ['all']):
-                self.probes_to_process.append(probe)
+                self.probes_to_process = self.existing_probes
+                break
 
-            # Get specific probe id
-            elif probe["id"] in self.args.get_probes:
-                self.probes_to_process.append(probe)
+            # Filter on specific probe id
+            if self.args.get_probes:
+                if probe["id"] not in self.args.get_probes:
+                    continue
 
-            # Search by tag
-            elif any(tag in self.args.get_tags for tag in probe["tags"]):
-                self.probes_to_process.append(probe)
+            # Filter on tags
+            if self.args.get_tags:
+                if not any(tag in self.args.get_tags for tag in probe["tags"]):
+                    continue
 
-            # Substring search in probe name
-            elif name_filter and re.search(name_filter, name, re.I):
-                self.probes_to_process.append(probe)
+            # Filter by substring in probe name
+            if name_filter:
+                if not re.search(name_filter, name, re.I):
+                    continue
 
-            # Get probes with a certain state (enabled/disabled)
-            elif probe['state'] == self.args.get_state:
-                self.probes_to_process.append(probe)
+            # Get only probes with a certain state (enabled/disabled)
+            if self.args.get_state:
+                if probe['state'] != self.args.get_state:
+                    continue
+
+            self.probes_to_process.append(probe)
 
         if self.probes_to_process:
             if self.args.delete:
