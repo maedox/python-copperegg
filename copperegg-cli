@@ -124,6 +124,7 @@ class CopperEggCli(object):
             return True
 
         if not self.args.get_probes and \
+                not self.args.get_destinations and \
                 not self.args.get_tags and \
                 not self.args.get_names and \
                 not self.args.get_state:
@@ -373,12 +374,12 @@ class CopperEggCli(object):
         # Search arguments
         parser.add_argument("--get-probes", nargs="+", default=[],
                             metavar="ID", help="Probe id or all")
+        parser.add_argument("--get-destinations", nargs="+", default=[], metavar="DEST",
+                            help="Probe destination (regex, case-insensitive, substring)")
         parser.add_argument("--get-tags", nargs="+", default=[],
                             metavar="TAG", help="Tag or all")
-        parser.add_argument("--get-names", nargs="+", default=[],
-                            metavar="REGEX",
-                            help="Search in probe name. Regex, substring, "
-                            "case-insensitive.")
+        parser.add_argument("--get-names", nargs="+", default=[], metavar="REGEX",
+                            help="Search in probe name. (regex, case-insensitive, substring.")
         parser.add_argument("--get-state", default='',
                             choices=('enabled', 'disabled'),
                             metavar="STATE", help="Find probes with given state.")
@@ -456,9 +457,6 @@ class CopperEggCli(object):
 
         # Filter existing probes according to command-line arguments
         for probe in self.existing_probes:
-            name = probe["probe_desc"]
-            name_filter = "|".join(self.args.get_names)
-
             # Get all probes
             if (self.args.get_probes == ['all'] or
                     self.args.get_tags == ['all']):
@@ -470,12 +468,21 @@ class CopperEggCli(object):
                 if probe["id"] not in self.args.get_probes:
                     continue
 
+            # Filter on destination
+            dest = probe["probe_dest"].lower()
+            dest_filter = "|".join(self.args.get_destinations)
+            if dest_filter:
+                if not re.search(dest_filter, dest, re.I):
+                    continue
+
             # Filter on tags
             if self.args.get_tags:
                 if not any(tag in self.args.get_tags for tag in probe["tags"]):
                     continue
 
             # Filter by substring in probe name
+            name = probe["probe_desc"]
+            name_filter = "|".join(self.args.get_names)
             if name_filter:
                 if not re.search(name_filter, name, re.I):
                     continue
