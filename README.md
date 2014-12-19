@@ -11,15 +11,12 @@ Make sure you have read and understood the code before using it for any purpose.
 - Listing, updating, adding and deleting probes.
 - Set stations, tags and more.
 - Enable stations by region
+- Backup and restore functionality.
+- Search for probes by name using case-insensitive regexp, substring search.
 
 ### Recently added
-- Backup and restore functionality.
-- Search for probes by name using case-insensitive regexp's, substring search.
 
-### Coming soon
-- Allow changing all possible settings for a probe
-
-Let me know if there are features you would like to see in the future.
+- Search for probes by destination using case-insensitive regexp, substring search.
 
 ## Requirements
 - A CopperEgg account and API token.
